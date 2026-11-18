@@ -106,7 +106,9 @@ Two rules shape it:
 - **Previews stay in the main process.** The window sends back only the ids of the changes to
   apply, so what is written is exactly what was previewed.
 
-### Credits
+### Licence and credits
+
+This app is MIT-licensed; see `LICENSE`. Code taken from other projects keeps its own licence:
 
 - `electron/core/canvas.ts`, `objects.ts`, `types.ts`: Dr. Shane K. Panter's edutools (Boise State
   University, Department of Computer Science), MIT licence (`electron/core/LICENSE`).
