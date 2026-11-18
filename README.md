@@ -15,6 +15,9 @@ and shared it under the MIT licence. The Canvas connection at the heart of this 
 and the careful habits throughout it (preview before writing, never overwrite what students can
 see without asking, check that every change landed) come from his design. Thank you, Shane.
 
+- Shane's edutools repository: [github.com/shanep/edutools](https://github.com/shanep/edutools)
+- Shane on GitHub: [github.com/shanep](https://github.com/shanep)
+
 ## What it does
 
 The app opens on **"What are you working on today?"**, with three paths.
