@@ -1,0 +1,13 @@
+node_modules/
+dist/
+dist-electron/
+out/
+release/
+*.local
+.env
+
+# TypeScript incremental-build caches (tsconfig.web.tsbuildinfo etc.)
+*.tsbuildinfo
+
+# Python bytecode from resources/make-icon.py
+__pycache__/
