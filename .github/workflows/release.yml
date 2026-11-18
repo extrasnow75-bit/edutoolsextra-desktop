@@ -1,0 +1,149 @@
+# Builds the Windows installer and the two macOS disk images and attaches all three to one
+# GitHub Release. Adapted from Canvas Extractor Tools' workflow.
+#
+# Triggered by pushing a version tag:
+#
+#     git tag v0.1.0 && git push origin v0.1.0
+#
+# Before tagging, rewrite RELEASE_NOTES.md as the "What's new in vX.Y.Z" list for that version;
+# the release job refuses to publish if the file does not name the tag.
+#
+# Or run it from the Actions tab ("Run workflow"), which builds the installers as workflow
+# artifacts without publishing a release.
+
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build installer
+        # --publish never: publishing is the release job's work, not electron-builder's.
+        # CSC_IDENTITY_AUTO_DISCOVERY=false: the builds are unsigned, so do not look for a certificate.
+        run: npm run build -- --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.os }}
+          path: |
+            release/*.exe
+            release/*.dmg
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: RELEASE_NOTES.md
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Check the change list names this version
+        run: |
+          if ! grep -q "What's new in $GITHUB_REF_NAME" RELEASE_NOTES.md; then
+            echo "::error file=RELEASE_NOTES.md::RELEASE_NOTES.md must start with '## What's new in $GITHUB_REF_NAME'."
+            exit 1
+          fi
+
+      - name: Rename installers
+        # Course staff install this, so the file name itself says which computer it is for.
+        run: |
+          ver="${GITHUB_REF_NAME#v}"
+          cd artifacts
+          for f in *.exe; do mv -- "$f" "edutools-WINDOWS-$ver.exe"; done
+          for f in *.dmg; do
+            case "$f" in *arm64*) arch="APPLE-SILICON" ;; *) arch="INTEL" ;; esac
+            mv -- "$f" "edutools-MAC-$arch-$ver.dmg"
+          done
+          ls -1
+          test "$(ls -1 | wc -l)" -eq 3
+
+      - name: Write release notes
+        run: |
+          cat > notes.md <<'NOTES'
+          ## Download
+
+          **Windows:** [edutools-WINDOWS-__VER__.exe](https://github.com/__REPO__/releases/download/v__VER__/edutools-WINDOWS-__VER__.exe)
+
+          **Mac with Apple Silicon (M1 or later):** [edutools-MAC-APPLE-SILICON-__VER__.dmg](https://github.com/__REPO__/releases/download/v__VER__/edutools-MAC-APPLE-SILICON-__VER__.dmg)
+
+          **Mac with an Intel processor:** [edutools-MAC-INTEL-__VER__.dmg](https://github.com/__REPO__/releases/download/v__VER__/edutools-MAC-INTEL-__VER__.dmg)
+
+          Not sure which Mac you have? Click the Apple menu, then **About This Mac**. The Chip line
+          says Apple M1/M2/M3/M4 for Apple Silicon, or Intel.
+
+          NOTES
+          cat RELEASE_NOTES.md >> notes.md
+          cat >> notes.md <<'NOTES'
+
+          ## Installing on Windows
+
+          Download the `.exe` file and double-click it. Windows will show **"Windows protected your
+          PC."** Click **More info**, then **Run anyway**. It appears because this app was built
+          in-house, not because anything is wrong with it.
+
+          ## Installing on a Mac
+
+          Open the `.dmg` file and drag **edutools** into Applications. The first time, macOS will
+          refuse to open it. Open **Terminal** (Applications → Utilities), paste this line, and
+          press Return:
+
+          ```
+          xattr -dr com.apple.quarantine "/Applications/edutools.app"
+          ```
+
+          Then open the app normally. You need to do this once per version.
+
+          ---
+
+          Your Canvas token is stored in your operating system's keychain and never leaves your
+          computer except to go to your Canvas site.
+          NOTES
+          sed -i "s/__VER__/${GITHUB_REF_NAME#v}/g; s|__REPO__|${GITHUB_REPOSITORY}|g" notes.md
+          cat notes.md
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          prerelease=""
+          case "$GITHUB_REF_NAME" in *-*) prerelease="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" artifacts/* \
+            --repo "$GITHUB_REPOSITORY" --title "edutools $GITHUB_REF_NAME" --notes-file notes.md $prerelease
