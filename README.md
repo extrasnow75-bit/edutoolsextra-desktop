@@ -6,6 +6,15 @@ the desktop side of Shane Panter's [edutools](https://github.com/shanep/edutools
 [Canvas Extractor Tools](https://github.com/extrasnow75-bit/canvas-extractor-tools) and
 [Canvas Rubric Creator](https://github.com/extrasnow75-bit/Rubric-Creator-Desktop-App).
 
+## With thanks to Dr. Shane Panter
+
+This app stands on the work of **Dr. Shane K. Panter** of the Department of Computer Science at
+Boise State University. He created [edutools](https://github.com/shanep/edutools), the command-line
+tool and desktop app that showed how a Canvas course can be built, checked and kept current safely,
+and shared it under the MIT licence. The Canvas connection at the heart of this app is his code,
+and the careful habits throughout it (preview before writing, never overwrite what students can
+see without asking, check that every change landed) come from his design. Thank you, Shane.
+
 ## What it does
 
 The app opens on **"What are you working on today?"**, with three paths.
@@ -96,7 +105,7 @@ Two rules shape it:
 
 ### Credits
 
-- `electron/core/canvas.ts`, `objects.ts`, `types.ts`: Shane K. Panter's edutools, MIT licence
-  (`electron/core/LICENSE`).
+- `electron/core/canvas.ts`, `objects.ts`, `types.ts`: Dr. Shane K. Panter's edutools (Boise State
+  University, Department of Computer Science), MIT licence (`electron/core/LICENSE`).
 - The course list, picker filtering and selection rules, window security settings, build
   configuration and release workflow follow Canvas Extractor Tools.

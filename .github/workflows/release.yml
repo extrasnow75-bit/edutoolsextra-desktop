@@ -131,6 +131,12 @@ jobs:
 
           Then open the app normally. You need to do this once per version.
 
+          ## With thanks to Dr. Shane Panter
+
+          This app is built on the work of **Dr. Shane K. Panter**, Department of Computer Science,
+          Boise State University. His [edutools](https://github.com/shanep/edutools) provides the
+          app's Canvas connection and the safety-first approach behind every tool. Thank you, Shane.
+
           ---
 
           Your Canvas token is stored in your operating system's keychain and never leaves your
